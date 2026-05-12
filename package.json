@@ -4,6 +4,23 @@
   "private": true,
   "type": "module",
   "description": "Reusable skill scripts for building SQLite-backed LLM Wiki knowledge bases and knowledge graphs.",
+  "keywords": [
+    "llm-wiki",
+    "wiki",
+    "knowledge-base",
+    "knowledge-graph",
+    "agent-skills",
+    "agent",
+    "claude-code",
+    "codex",
+    "opencode",
+    "sqlite",
+    "better-sqlite3",
+    "markdown",
+    "rag",
+    "graph",
+    "static-viewer"
+  ],
   "scripts": {
     "cli": "node scripts/llm-wiki.mjs",
     "init": "node scripts/init-wiki.mjs",
