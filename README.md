@@ -131,6 +131,20 @@ node scripts/llm-wiki.mjs lint
 
 默认数据库路径为 `./data/wiki.db`。默认导入 `README.md`、`docs` 和 `SKILL.md`，如果都不存在则导入当前目录。
 
+执行 `graph` 时会在图谱 JSON 同目录额外生成一个纯 HTML + JS 可视化页面：
+
+```text
+data/
+|-- wiki.db
+|-- wiki-graph.json
+|-- wiki-data.json
+|-- wiki-viewer.html
+|-- wiki-viewer.js
+`-- wiki-viewer-data.js
+```
+
+直接打开 `wiki-viewer.html` 就可以浏览知识库页面、实体、主题、技能元数据和知识图谱。这个 Viewer 不依赖构建工具，也不需要后端服务。
+
 ### Agent 中使用
 
 ```bash
@@ -160,7 +174,7 @@ node scripts/llm-wiki.mjs graph ./data/product.db --out ./data/product-graph.jso
 | `init` | `node scripts/llm-wiki.mjs init` | 初始化默认 `./data/wiki.db`。 |
 | `ingest` | `node scripts/llm-wiki.mjs ingest` | 导入默认文档并写入 sources、pages、chunks。 |
 | `query` | `node scripts/llm-wiki.mjs query "agent"` | 查询 Wiki、chunk、实体和主题。 |
-| `graph` | `node scripts/llm-wiki.mjs graph` | 导出 `./data/wiki-graph.json`。 |
+| `graph` | `node scripts/llm-wiki.mjs graph` | 导出 `./data/wiki-graph.json`，并生成纯 HTML + JS Viewer。 |
 | `extract` | `node scripts/llm-wiki.mjs extract` | 使用 LLM 抽取实体、主题、关系和综合页。 |
 | `lint` | `node scripts/llm-wiki.mjs lint` | 检查 Wiki 健康度和证据覆盖率。 |
 | `reingest` | `node scripts/llm-wiki.mjs reingest ./docs --extract` | 重新导入文档，可选重新抽取。 |
@@ -174,7 +188,7 @@ node scripts/llm-wiki.mjs graph ./data/product.db --out ./data/product-graph.jso
 | `scripts/init-wiki.mjs` | 创建数据库、表、索引和默认配置。 |
 | `scripts/ingest-docs.mjs` | 导入 Markdown/TXT 文件并创建 chunks。 |
 | `scripts/extract-llm.mjs` | 调用 LLM 抽取实体、主题和关系。 |
-| `scripts/build-graph.mjs` | 导出知识图谱 JSON。 |
+| `scripts/build-graph.mjs` | 导出知识图谱 JSON，并在同目录生成 Viewer 静态资源。 |
 | `scripts/query-wiki.mjs` | 运行全文检索和结构化查询。 |
 | `scripts/lint-wiki.mjs` | 检查知识库质量。 |
 | `scripts/reingest.mjs` | 重新导入并可选重跑抽取。 |

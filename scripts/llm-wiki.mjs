@@ -104,7 +104,8 @@ Commands:
   init [db] [--name <name>]                 Initialize SQLite wiki DB
   ingest [db] <file-or-dir...>              Import Markdown/TXT/README/SKILL.md files
   extract [db] [--depth fast|standard|deep] Run LLM entity/topic/relation extraction
-  graph [db] [--out graph.json]             Export knowledge graph JSON
+  graph [db] [--out graph.json] [--no-viewer]
+                                           Export graph JSON plus HTML/JS viewer
   query [db] <query> [--limit N]            Search wiki pages/chunks/entities/topics
   lint [db]                                 Check wiki health and evidence coverage
   reingest [db] <file-or-dir...> [--extract] Reimport sources, optionally rerun extraction
@@ -120,5 +121,6 @@ Friendly defaults:
 
 Default DB: ./data/wiki.db
 Default ingest inputs: README.md, docs, SKILL.md when present.
+Graph export also writes wiki-viewer.html, wiki-viewer.js, wiki-viewer-data.js, and wiki-data.json next to the graph JSON.
 `);
 }

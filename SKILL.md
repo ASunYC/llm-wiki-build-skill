@@ -21,6 +21,18 @@ When this skill is installed in Claude Code, Codex, or OpenCode, prefer the comm
 /llm-wiki status
 ```
 
+`/llm-wiki graph` exports the graph JSON and a pure HTML + JS viewer in the same directory:
+
+```text
+wiki-graph.json
+wiki-data.json
+wiki-viewer.html
+wiki-viewer.js
+wiki-viewer-data.js
+```
+
+Open `wiki-viewer.html` to browse pages, entities, topics, skills metadata, and the knowledge graph without a backend server.
+
 The equivalent direct command is:
 
 ```bash
