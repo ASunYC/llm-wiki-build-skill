@@ -8,6 +8,8 @@
 
 **作者**: [ASunYC](https://github.com/ASunYC)
 
+[官网首页](https://asunyc.github.io/) · [Skills Book 页面](https://asunyc.github.io/skills-book/) · [Skills Shop 页面](https://asunyc.github.io/skills-shop/)
+
 [项目简介](#项目简介) | [快速安装](#快速安装) | [使用指南](#使用指南) | [命令表](#命令表) | [LLM 配置](#llm-配置) | [数据模型](#数据模型) | [FAQ](#faq)
 
 </div>
