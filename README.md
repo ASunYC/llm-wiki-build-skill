@@ -69,6 +69,29 @@ npm install better-sqlite3
 
 ## Quick Start
 
+Use the unified command wrapper in an agent session:
+
+```bash
+node scripts/llm-wiki.mjs init
+node scripts/llm-wiki.mjs ingest
+node scripts/llm-wiki.mjs query "frontend design"
+node scripts/llm-wiki.mjs graph
+node scripts/llm-wiki.mjs lint
+```
+
+When installed as an Agent command, the same workflow becomes:
+
+```bash
+/llm-wiki init
+/llm-wiki ingest
+/llm-wiki extract
+/llm-wiki query "frontend design"
+/llm-wiki graph
+/llm-wiki lint
+```
+
+The wrapper defaults to `./data/wiki.db` and imports `README.md`, `docs`, and `SKILL.md` when present.
+
 Initialize a wiki database:
 
 ```bash
@@ -153,6 +176,32 @@ LLM extraction writes:
 ---
 
 ## Commands
+
+### Agent Slash Command
+
+This repository includes command definitions for mainstream agent tools:
+
+```text
+commands/llm-wiki.md
+.claude/commands/llm-wiki.md
+.codex/commands/llm-wiki.md
+.opencode/commands/llm-wiki.md
+```
+
+Install the matching command file into your agent command directory, then use:
+
+```bash
+/llm-wiki init
+/llm-wiki ingest
+/llm-wiki extract
+/llm-wiki query "agent memory"
+/llm-wiki graph
+/llm-wiki lint
+/llm-wiki status
+/llm-wiki test
+```
+
+The command calls `scripts/llm-wiki.mjs`, which delegates to the underlying scripts below.
 
 | Command | Example | Description |
 | --- | --- | --- |

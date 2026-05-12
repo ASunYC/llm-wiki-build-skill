@@ -7,6 +7,28 @@ description: Build a reusable SQLite-backed LLM Wiki knowledge base and knowledg
 
 Use this skill to add a complete portable LLM Wiki knowledge base to any project.
 
+## Agent Command
+
+When this skill is installed in Claude Code, Codex, or OpenCode, prefer the command wrapper:
+
+```bash
+/llm-wiki init
+/llm-wiki ingest
+/llm-wiki extract
+/llm-wiki query "frontend design"
+/llm-wiki graph
+/llm-wiki lint
+/llm-wiki status
+```
+
+The equivalent direct command is:
+
+```bash
+node path/to/llm-wiki-build-skill/scripts/llm-wiki.mjs <command> [args]
+```
+
+If the user omits a database path, the wrapper uses `./data/wiki.db` in the current project.
+ 
 ## Workflow
 
 1. Install the runtime dependency in the target project:

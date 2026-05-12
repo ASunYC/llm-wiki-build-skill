@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Reusable skill scripts for building SQLite-backed LLM Wiki knowledge bases and knowledge graphs.",
   "scripts": {
+    "cli": "node scripts/llm-wiki.mjs",
     "init": "node scripts/init-wiki.mjs",
     "ingest": "node scripts/ingest-docs.mjs",
     "graph": "node scripts/build-graph.mjs",
