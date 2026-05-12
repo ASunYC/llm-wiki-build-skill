@@ -8,8 +8,6 @@
 
 **作者**: [ASunYC](https://github.com/ASunYC)
 
-[官网首页](https://asunyc.github.io/) · [Skills Book 页面](https://asunyc.github.io/skills-book/) · [Skills Shop 页面](https://asunyc.github.io/skills-shop/)
-
 [项目简介](#项目简介) | [快速安装](#快速安装) | [使用指南](#使用指南) | [命令表](#命令表) | [LLM 配置](#llm-配置) | [数据模型](#数据模型) | [FAQ](#faq)
 
 </div>
@@ -50,6 +48,12 @@ node scripts/llm-wiki.mjs <command> [args]
 - **LLM 增强模式**：配置 OpenAI-compatible API 后，额外生成实体、主题、语义关系、证据链和 synthesis 页面。
 
 它也是 `skills-book` 的知识库底座：`skills-book` 可以用它把公开技能仓库、README、SKILL.md、作者、地区和 stars 信息沉淀为 `skills.db`，再导出给 Skills Shop 页面使用。
+
+### 演示地址
+
+- 官网首页：https://asunyc.github.io/
+- Skills Book 页面：https://asunyc.github.io/skills-book/
+- Skills Shop 页面：https://asunyc.github.io/skills-shop/
 
 ---
 
