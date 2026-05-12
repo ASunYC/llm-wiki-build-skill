@@ -1,85 +1,22 @@
 # LLM Wiki Build Skill
 
-> A reusable Codex/Claude-style skill for building SQLite-backed LLM Wiki knowledge bases and knowledge graphs from Markdown, README, SKILL.md, and text files.
+> 一个可复用的 Agent 技能工程，用 SQLite 将任意项目的 Markdown、README、SKILL.md 和文本资料构建成 LLM Wiki 知识库与知识图谱。
 
 <div align="center">
 
-<img alt="Node.js 22+" src="https://img.shields.io/badge/node.js-22+-green.svg"> <img alt="SQLite" src="https://img.shields.io/badge/storage-SQLite-blue.svg"> <img alt="better-sqlite3" src="https://img.shields.io/badge/driver-better--sqlite3-lightgrey.svg"> <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-green.svg">
+<img alt="Version" src="https://img.shields.io/badge/version-0.1.0-blue.svg"> <img alt="Node.js 22+" src="https://img.shields.io/badge/node.js-22+-green.svg"> <img alt="SQLite" src="https://img.shields.io/badge/storage-SQLite-blue.svg"> <img alt="better-sqlite3" src="https://img.shields.io/badge/driver-better--sqlite3-lightgrey.svg"> <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-green.svg">
 
-**Author**: [ASunYC](https://github.com/ASunYC)
+**作者**: [ASunYC](https://github.com/ASunYC)
+
+[项目简介](#项目简介) | [快速安装](#快速安装) | [使用指南](#使用指南) | [命令表](#命令表) | [LLM 配置](#llm-配置) | [数据模型](#数据模型) | [FAQ](#faq)
 
 </div>
 
 ---
 
-## Project Overview
+## Agent Slash Command
 
-`llm-wiki-build-skill` extracts the core idea of an LLM Wiki into a portable skill project. It lets any repository quickly create a local knowledge base, import documentation, split content into searchable chunks with evidence locations, extract entities/topics/relations with an OpenAI-compatible LLM, lint quality, reingest sources, and export graph JSON for UI or agent workflows.
-
-The project is designed for two modes:
-
-- **Fallback wiki mode**: no LLM credentials required. It builds sources, pages, chunks, FTS search, deterministic graph edges, and graph communities.
-- **LLM-enhanced mode**: set environment variables and run extraction. It adds entities, topics, semantic/document relations, contradictions, and synthesis pages with source evidence.
-
-It supports projects like `skills-book`, where public skill repositories are transformed into `skills.db` and exported into a Skills Shop interface.
-
----
-
-## What It Builds
-
-The generated wiki database can store:
-
-- `sources`: imported files, URLs, or documents.
-- `pages`: normalized wiki pages, including `source`, `entity`, `topic`, `synthesis`, and `query` pages.
-- `chunks`: searchable text chunks with line and character offsets.
-- `entities`: LLM-extracted people, tools, frameworks, projects, concepts, or patterns.
-- `topics`: reusable topic labels and definitions.
-- `relations`: deterministic and LLM-extracted graph edges.
-- `analysis_configs`: analysis behavior such as depth and merge policy.
-- `llm_runs`: audit records for LLM extraction runs.
-- `skills`, `repositories`, `authors`, `locations`: optional marketplace-style metadata.
-
-Graph output includes:
-
-- `nodes`
-- `edges`
-- `communities`
-- `insights`
-- `statistics`
-
----
-
-## Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/ASunYC/llm-wiki-build-skill.git
-cd llm-wiki-build-skill
-npm install
-```
-
-Or install the runtime dependency in a target project:
-
-```bash
-npm install better-sqlite3
-```
-
----
-
-## Quick Start
-
-Use the unified command wrapper in an agent session:
-
-```bash
-node scripts/llm-wiki.mjs init
-node scripts/llm-wiki.mjs ingest
-node scripts/llm-wiki.mjs query "frontend design"
-node scripts/llm-wiki.mjs graph
-node scripts/llm-wiki.mjs lint
-```
-
-When installed as an Agent command, the same workflow becomes:
+安装到 Claude Code、Codex 或 OpenCode 后，可以直接使用统一命令：
 
 ```bash
 /llm-wiki init
@@ -88,107 +25,113 @@ When installed as an Agent command, the same workflow becomes:
 /llm-wiki query "frontend design"
 /llm-wiki graph
 /llm-wiki lint
+/llm-wiki status
 ```
 
-The wrapper defaults to `./data/wiki.db` and imports `README.md`, `docs`, and `SKILL.md` when present.
-
-Initialize a wiki database:
+直接 CLI 等价命令：
 
 ```bash
-node scripts/init-wiki.mjs ./data/wiki.db --name "Project Wiki"
+node scripts/llm-wiki.mjs <command> [args]
 ```
 
-Import documents:
+命令定义已内置在 `commands/llm-wiki.md`、`.claude/commands/llm-wiki.md`、`.codex/commands/llm-wiki.md` 和 `.opencode/commands/llm-wiki.md`。
+
+---
+
+## 项目简介
+
+`llm-wiki-build-skill` 从 LLM Wiki 的核心能力中提炼出一个可迁移的技能工程。它可以在任意项目中快速创建本地知识库，导入文档，按标题结构切分内容，保留证据位置，使用 SQLite FTS5 搜索，并在可选 LLM 配置下抽取实体、主题、关系、矛盾点和综合页。
+
+这个技能面向两类场景：
+
+- **基础 Wiki 模式**：不需要 LLM API Key，仍然可以构建 sources、pages、chunks、全文搜索、确定性关系和图谱社区。
+- **LLM 增强模式**：配置 OpenAI-compatible API 后，额外生成实体、主题、语义关系、证据链和 synthesis 页面。
+
+它也是 `skills-book` 的知识库底座：`skills-book` 可以用它把公开技能仓库、README、SKILL.md、作者、地区和 stars 信息沉淀为 `skills.db`，再导出给 Skills Shop 页面使用。
+
+---
+
+## 功能特性
+
+### 核心能力
+
+- **一键初始化 Wiki**：创建 SQLite 数据库、核心表、索引、FTS5 和默认分析配置。
+- **文档导入与分块**：优先按 Markdown 标题结构切分，超长内容再按字符窗口拆分。
+- **证据位置追踪**：chunk 保存文件路径、行号、字符偏移，便于 LLM 输出回溯来源。
+- **全文检索**：使用 SQLite FTS5 查询 pages、chunks、entities 和 topics。
+- **知识图谱导出**：输出 nodes、edges、communities、insights 和 statistics。
+- **LLM 抽取增强**：支持实体、主题、关系、矛盾点和综合摘要生成。
+- **质量检查**：检查空库、孤立节点、坏关系、证据覆盖率和 LLM 配置状态。
+- **Agent 命令适配**：提供 Claude Code、Codex、OpenCode 可用的 `/llm-wiki` 命令定义。
+
+### 技术亮点
+
+- SQLite 本地存储，默认驱动为 `better-sqlite3`。
+- API Key 只从环境变量读取，不写入数据库。
+- 未配置 LLM 时可以优雅降级为基础知识库。
+- 图谱关系同时支持 `wikilink`、`shared_tag`、`source_overlap` 和 `llm_relation`。
+- 可作为其他项目的构建技能，而不是绑定某个后端平台或 UI。
+
+---
+
+## 快速安装
+
+### 方法一：作为独立工程使用
 
 ```bash
-node scripts/ingest-docs.mjs ./data/wiki.db ./README.md ./docs
+git clone https://github.com/ASunYC/llm-wiki-build-skill.git
+cd llm-wiki-build-skill
+npm install
 ```
 
-Query the wiki:
+验证安装：
 
 ```bash
-node scripts/query-wiki.mjs ./data/wiki.db "frontend design"
+node scripts/llm-wiki.mjs help
 ```
 
-Build a graph:
+### 方法二：在目标项目中直接调用
+
+目标项目只需要安装运行时依赖：
 
 ```bash
-node scripts/build-graph.mjs ./data/wiki.db --out ./data/wiki-graph.json
+npm install better-sqlite3
 ```
 
-Lint the wiki:
+然后通过路径调用本技能：
 
 ```bash
-node scripts/lint-wiki.mjs ./data/wiki.db
+node ../llm-wiki-build-skill/scripts/llm-wiki.mjs init
+node ../llm-wiki-build-skill/scripts/llm-wiki.mjs ingest
+node ../llm-wiki-build-skill/scripts/llm-wiki.mjs graph
 ```
 
 ---
 
-## LLM Extraction
+## 使用指南
 
-The API key design is intentionally simple and safe:
-
-- `LLM_API_BASE`: OpenAI-compatible endpoint, for example `https://api.openai.com/v1`.
-- `LLM_API_KEY`: API key. It is read from the environment only and is never written to SQLite.
-- `LLM_MODEL`: model name.
-- `LLM_TIMEOUT_MS`: optional request timeout, default `180000`.
-
-Example:
+### 快速开始
 
 ```bash
-export LLM_API_BASE=https://api.openai.com/v1
-export LLM_API_KEY=your-key
-export LLM_MODEL=gpt-4.1-mini
+# 初始化 ./data/wiki.db
+node scripts/llm-wiki.mjs init
+
+# 导入 README.md、docs、SKILL.md
+node scripts/llm-wiki.mjs ingest
+
+# 查询知识库
+node scripts/llm-wiki.mjs query "frontend design"
+
+# 导出知识图谱
+node scripts/llm-wiki.mjs graph
+
+# 检查知识库质量
+node scripts/llm-wiki.mjs lint
 ```
 
-Check masked config:
+默认数据库路径为 `./data/wiki.db`。默认导入 `README.md`、`docs` 和 `SKILL.md`，如果都不存在则导入当前目录。
 
-```bash
-node scripts/llm-status.mjs
-```
-
-Test the connection:
-
-```bash
-node scripts/test-llm.mjs
-```
-
-Run extraction:
-
-```bash
-node scripts/extract-llm.mjs ./data/wiki.db --depth standard
-```
-
-Supported depth values:
-
-- `fast`: larger chunks, fewer extracted items.
-- `standard`: balanced default.
-- `deep`: smaller chunks, more extracted items.
-
-LLM extraction writes:
-
-- entities into `entities`
-- topics into `topics`
-- semantic and document relations into `relations(relation_type = "llm_relation")`
-- source summaries and contradictions into `pages(page_type = "synthesis")`
-- evidence locations into `relations.evidence_details`
-
----
-
-## Commands
-
-### Agent Slash Command
-
-This repository includes command definitions for mainstream agent tools:
-
-```text
-commands/llm-wiki.md
-.claude/commands/llm-wiki.md
-.codex/commands/llm-wiki.md
-.opencode/commands/llm-wiki.md
-```
-
-Install the matching command file into your agent command directory, then use:
+### Agent 中使用
 
 ```bash
 /llm-wiki init
@@ -197,95 +140,115 @@ Install the matching command file into your agent command directory, then use:
 /llm-wiki query "agent memory"
 /llm-wiki graph
 /llm-wiki lint
-/llm-wiki status
-/llm-wiki test
 ```
 
-The command calls `scripts/llm-wiki.mjs`, which delegates to the underlying scripts below.
-
-| Command | Example | Description |
-| --- | --- | --- |
-| `init-wiki` | `node scripts/init-wiki.mjs ./data/wiki.db --name "Project Wiki"` | Create SQLite tables and indexes. |
-| `ingest-docs` | `node scripts/ingest-docs.mjs ./data/wiki.db ./README.md ./docs` | Import Markdown/TXT files into sources, pages, chunks, and FTS. |
-| `llm-status` | `node scripts/llm-status.mjs` | Show masked LLM configuration loaded from environment variables. |
-| `test-llm` | `node scripts/test-llm.mjs` | Test the OpenAI-compatible LLM connection. |
-| `extract-llm` | `node scripts/extract-llm.mjs ./data/wiki.db --depth standard` | Extract entities, topics, relations, contradictions, and synthesis pages. |
-| `build-graph` | `node scripts/build-graph.mjs ./data/wiki.db --out ./data/wiki-graph.json` | Export deterministic + LLM-enhanced graph JSON. |
-| `query-wiki` | `node scripts/query-wiki.mjs ./data/wiki.db "agent"` | Search FTS chunks, pages, entities, and topics. |
-| `lint-wiki` | `node scripts/lint-wiki.mjs ./data/wiki.db` | Check pages, chunks, graph edges, and evidence coverage. |
-| `reingest` | `node scripts/reingest.mjs ./data/wiki.db ./docs --extract` | Reimport source files and optionally rerun LLM extraction. |
-
----
-
-## Use It From Another Project
-
-You can keep this repository outside your target project and call scripts by path:
+### 指定数据库和文件
 
 ```bash
-node ../llm-wiki-build-skill/scripts/init-wiki.mjs ./data/wiki.db --name "My App Wiki"
-node ../llm-wiki-build-skill/scripts/ingest-docs.mjs ./data/wiki.db ./README.md ./docs
-node ../llm-wiki-build-skill/scripts/extract-llm.mjs ./data/wiki.db --depth standard
-node ../llm-wiki-build-skill/scripts/build-graph.mjs ./data/wiki.db --out ./public/wiki-graph.json
-```
-
-Recommended target project layout:
-
-```text
-my-project/
-|-- data/
-|   |-- wiki.db
-|   `-- wiki-graph.json
-|-- docs/
-|-- README.md
-`-- package.json
+node scripts/llm-wiki.mjs init ./data/product.db --name "Product Wiki"
+node scripts/llm-wiki.mjs ingest ./data/product.db ./README.md ./docs ./notes
+node scripts/llm-wiki.mjs query ./data/product.db "release plan"
+node scripts/llm-wiki.mjs graph ./data/product.db --out ./data/product-graph.json
 ```
 
 ---
 
-## LLM Wiki Model
+## 命令表
 
-### Page Types
+| 命令 | 示例 | 说明 |
+| --- | --- | --- |
+| `init` | `node scripts/llm-wiki.mjs init` | 初始化默认 `./data/wiki.db`。 |
+| `ingest` | `node scripts/llm-wiki.mjs ingest` | 导入默认文档并写入 sources、pages、chunks。 |
+| `query` | `node scripts/llm-wiki.mjs query "agent"` | 查询 Wiki、chunk、实体和主题。 |
+| `graph` | `node scripts/llm-wiki.mjs graph` | 导出 `./data/wiki-graph.json`。 |
+| `extract` | `node scripts/llm-wiki.mjs extract` | 使用 LLM 抽取实体、主题、关系和综合页。 |
+| `lint` | `node scripts/llm-wiki.mjs lint` | 检查 Wiki 健康度和证据覆盖率。 |
+| `reingest` | `node scripts/llm-wiki.mjs reingest ./docs --extract` | 重新导入文档，可选重新抽取。 |
+| `status` | `node scripts/llm-wiki.mjs status` | 显示脱敏后的 LLM 配置。 |
+| `test` | `node scripts/llm-wiki.mjs test` | 测试 OpenAI-compatible API 连接。 |
 
-- `source`: imported source documents.
-- `entity`: entity pages, usually generated from SKILL.md or LLM output.
-- `topic`: topic landing pages.
-- `synthesis`: generated summaries, contradictions, or cross-document synthesis.
-- `query`: saved query results or generated answers.
+底层脚本仍然可以单独调用：
 
-### Relation Types
-
-- `wikilink`: created from `[[Page Title]]` style links.
-- `shared_tag`: created when pages share tags or categories.
-- `source_overlap`: created when records share a source or repository.
-- `mentions_entity`: created from page-to-entity extraction.
-- `has_topic`: created from page-to-topic extraction.
-- `llm_relation`: created by `extract-llm.mjs` with confidence, evidence, and evidence location.
-
-### Evidence Locations
-
-Every imported chunk stores:
-
-- `line_start`
-- `line_end`
-- `start_offset`
-- `end_offset`
-
-LLM relations store `evidence_details` with:
-
-- `chunkId`
-- `sourceTitle`
-- `sourcePath`
-- `lineStart`
-- `lineEnd`
-- `charStart`
-- `charEnd`
-- `snippet`
+| 脚本 | 用途 |
+| --- | --- |
+| `scripts/init-wiki.mjs` | 创建数据库、表、索引和默认配置。 |
+| `scripts/ingest-docs.mjs` | 导入 Markdown/TXT 文件并创建 chunks。 |
+| `scripts/extract-llm.mjs` | 调用 LLM 抽取实体、主题和关系。 |
+| `scripts/build-graph.mjs` | 导出知识图谱 JSON。 |
+| `scripts/query-wiki.mjs` | 运行全文检索和结构化查询。 |
+| `scripts/lint-wiki.mjs` | 检查知识库质量。 |
+| `scripts/reingest.mjs` | 重新导入并可选重跑抽取。 |
 
 ---
 
-## SQLite Schema
+## LLM 配置
 
-Core tables:
+API Key 设计保持简单且安全：
+
+- `LLM_API_BASE`：OpenAI-compatible endpoint，例如 `https://api.openai.com/v1`。
+- `LLM_API_KEY`：API Key，只从环境变量读取，不写入 SQLite。
+- `LLM_MODEL`：模型名称。
+- `LLM_TIMEOUT_MS`：可选超时时间，默认 `180000`。
+
+配置示例：
+
+```bash
+export LLM_API_BASE=https://api.openai.com/v1
+export LLM_API_KEY=your-key
+export LLM_MODEL=gpt-4.1-mini
+```
+
+Windows PowerShell：
+
+```powershell
+$env:LLM_API_BASE="https://api.openai.com/v1"
+$env:LLM_API_KEY="your-key"
+$env:LLM_MODEL="gpt-4.1-mini"
+```
+
+检查配置：
+
+```bash
+node scripts/llm-wiki.mjs status
+```
+
+测试连接并执行抽取：
+
+```bash
+node scripts/llm-wiki.mjs test
+node scripts/llm-wiki.mjs extract
+```
+
+抽取深度：
+
+| 深度 | 说明 |
+| --- | --- |
+| `fast` | 更少请求，更粗粒度，适合快速验证。 |
+| `standard` | 默认模式，平衡速度与质量。 |
+| `deep` | 更细粒度，抽取更多实体和关系。 |
+
+---
+
+## 数据模型
+
+### Page 类型
+
+- `source`：导入的源文档。
+- `entity`：实体页，通常来自 LLM 抽取结果。
+- `topic`：主题页。
+- `synthesis`：综合摘要、矛盾点或跨文档分析。
+- `query`：保存的查询结果或生成式回答。
+
+### Relation 类型
+
+- `wikilink`：由 `[[Page Title]]` 形式的链接生成。
+- `shared_tag`：页面共享标签或分类时生成。
+- `source_overlap`：记录共享来源、仓库或上下文时生成。
+- `mentions_entity`：页面提及实体。
+- `has_topic`：页面关联主题。
+- `llm_relation`：由 LLM 抽取，带 confidence 与 evidence。
+
+### SQLite 核心表
 
 ```text
 wikis
@@ -305,7 +268,7 @@ llm_runs
 chunks_fts
 ```
 
-Important indexes:
+关键索引：
 
 ```text
 pages(wiki_id, page_type)
@@ -320,69 +283,44 @@ skills(stars DESC)
 locations(lat, lon)
 ```
 
-See [references/schema.md](references/schema.md) for the full schema notes.
+完整 schema 说明见 [references/schema.md](references/schema.md)。
 
 ---
 
-## How It Works
+## 与 Skills Book 集成
 
-### 1. Initialize
-
-`init-wiki.mjs` creates the database, tables, indexes, FTS table, and default analysis config.
-
-### 2. Ingest
-
-`ingest-docs.mjs` recursively imports `.md` and `.txt` files. Markdown is chunked by heading structure first. Oversized sections are split into overlapping chunks. Each chunk is indexed in SQLite FTS5 and stores source line/character positions.
-
-### 3. Extract With LLM
-
-`extract-llm.mjs` calls an OpenAI-compatible chat completions API. It asks for strict JSON, repairs common JSON formatting issues, and writes entities, topics, relations, source summaries, and contradictions to SQLite.
-
-### 4. Build Graph
-
-`build-graph.mjs` creates graph nodes from pages, entities, and topics. It merges deterministic edges and LLM edges, then computes pair signals, communities, isolated nodes, bridge nodes, and cross-community surprises.
-
-### 5. Query
-
-`query-wiki.mjs` searches chunk FTS first, then falls back to pages, entities, and topics.
-
-### 6. Lint
-
-`lint-wiki.mjs` checks wiki health, broken chunk references, graph edge integrity, isolated nodes, and LLM evidence coverage.
-
----
-
-## Integration With Skills Book
-
-`skills-book` can use this model to build a skills knowledge base:
+`skills-book` 可以使用这个技能构建技能知识库：
 
 ```bash
-node scripts/skills-book.mjs fetch --force
-node scripts/skills-book.mjs build-wiki
-node scripts/skills-book.mjs wiki-query "frontend design"
-node scripts/skills-book.mjs wiki-graph --out ./skills-graph.json
-node scripts/skills-book.mjs shop-export ../ASunYC.github.io/docs/public/data
+node scripts/skills.mjs fetch --force
+node scripts/skills.mjs build-wiki
+node scripts/skills.mjs wiki-query "frontend design"
+node scripts/skills.mjs wiki-graph --out ./skills-graph.json
+node scripts/skills.mjs shop-export ../ASunYC.github.io/docs/public/data
 ```
 
-In that workflow:
+在这个流程中：
 
-- `skills.db` becomes the source of truth for skill metadata and wiki content.
-- README and SKILL.md files become wiki sources.
-- Skill category, repository, author, and location become graph signals.
-- Skills Shop consumes exported JSON instead of fetching GitHub at runtime.
+- `skills.db` 是技能元信息和知识库正文的权威存储。
+- README 与 SKILL.md 会进入 `sources`、`pages` 和 `chunks`。
+- 技能分类、仓库、作者、地区和 stars 会成为图谱信号。
+- Skills Shop 消费导出的静态 JSON，而不是在前端运行时抓取 GitHub。
 
 ---
 
-## Repository Structure
+## 项目结构
 
 ```text
 llm-wiki-build-skill/
 |-- README.md
 |-- SKILL.md
 |-- package.json
+|-- commands/
+|   `-- llm-wiki.md
 |-- references/
 |   `-- schema.md
 `-- scripts/
+    |-- llm-wiki.mjs
     |-- init-wiki.mjs
     |-- ingest-docs.mjs
     |-- llm-client.mjs
@@ -396,38 +334,76 @@ llm-wiki-build-skill/
     `-- wiki-core.mjs
 ```
 
+建议目标项目结构：
+
+```text
+my-project/
+|-- data/
+|   |-- wiki.db
+|   `-- wiki-graph.json
+|-- docs/
+|-- README.md
+`-- package.json
+```
+
 ---
 
-## Development Check
+## 开发验证
 
-Run a local smoke test:
+基础烟测：
 
 ```bash
 mkdir -p ./tmp
-node scripts/init-wiki.mjs ./tmp/wiki.db --name "Smoke Test"
-node scripts/ingest-docs.mjs ./tmp/wiki.db README.md SKILL.md references/schema.md
-node scripts/build-graph.mjs ./tmp/wiki.db --out ./tmp/wiki-graph.json
-node scripts/query-wiki.mjs ./tmp/wiki.db sqlite
-node scripts/lint-wiki.mjs ./tmp/wiki.db
+node scripts/llm-wiki.mjs init ./tmp/wiki.db --name "Smoke Test"
+node scripts/llm-wiki.mjs ingest ./tmp/wiki.db README.md SKILL.md references/schema.md
+node scripts/llm-wiki.mjs graph ./tmp/wiki.db --out ./tmp/wiki-graph.json
+node scripts/llm-wiki.mjs query ./tmp/wiki.db sqlite
+node scripts/llm-wiki.mjs lint ./tmp/wiki.db
 ```
 
-LLM smoke test, when credentials are available:
+LLM 烟测：
 
 ```bash
-node scripts/test-llm.mjs
-node scripts/extract-llm.mjs ./tmp/wiki.db --depth fast --limit 1
-node scripts/lint-wiki.mjs ./tmp/wiki.db
+node scripts/llm-wiki.mjs status
+node scripts/llm-wiki.mjs test
+node scripts/llm-wiki.mjs extract ./tmp/wiki.db --depth fast --limit 1
+node scripts/llm-wiki.mjs lint ./tmp/wiki.db
 ```
 
-Generated `*.db`, `*.db-wal`, and graph scratch files should stay out of Git.
+生成的 `*.db`、`*.db-wal`、`*.sqlite` 和临时图谱文件不应提交到 Git。
+
+---
+
+## FAQ
+
+### Q: 没有 LLM API Key 能使用吗？
+
+可以。未配置 LLM 时仍然可以初始化数据库、导入文档、全文搜索、构建基础图谱和运行质量检查。
+
+### Q: API Key 会写入数据库吗？
+
+不会。`LLM_API_KEY` 只从环境变量读取，`llm-status` 也只展示脱敏信息。
+
+### Q: 为什么默认导入没有传文件路径？
+
+`llm-wiki.mjs ingest` 会自动寻找当前项目中的 `README.md`、`docs` 和 `SKILL.md`。如果需要精确控制，可以显式传入路径。
+
+### Q: 和普通 RAG 索引有什么区别？
+
+这个技能不只做文本切块和搜索，还会维护 pages、entities、topics、relations、communities 和 evidence locations，更适合 Agent 做可追溯的项目理解与知识图谱分析。
+
+### Q: 可以放到其他 Agent CLI 中吗？
+
+可以。它本质是 Node.js CLI，Claude Code、Codex、OpenCode 或其他能运行 Node.js 22+ 的 Agent 都可以调用。
 
 ---
 
 ## Roadmap
 
-- Add richer import adapters for GitHub repositories and web pages.
-- Add export profiles for VitePress, static apps, and agent toolchains.
-- Add optional embedding search on top of the current FTS5 keyword search.
+- 增加 GitHub 仓库和网页导入适配器。
+- 增加面向 VitePress、静态站点和 Agent 工具链的 export profile。
+- 在 FTS5 之外增加可选 embedding search。
+- 提供更完整的图谱可视化前端模板。
 
 ---
 
@@ -436,3 +412,13 @@ Generated `*.db`, `*.db-wal`, and graph scratch files should stay out of Git.
 MIT License
 
 Copyright (c) 2026 ASunYC
+
+---
+
+<div align="center">
+
+如果这个项目对你有帮助，欢迎给一个 Star。
+
+Made by [ASunYC](https://github.com/ASunYC) | Powered by Node.js & SQLite
+
+</div>
