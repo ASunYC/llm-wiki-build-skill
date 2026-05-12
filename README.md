@@ -4,10 +4,7 @@
 
 <div align="center">
 
-![Node.js](https://img.shields.io/badge/node.js-22+-green.svg)
-![SQLite](https://img.shields.io/badge/storage-SQLite-blue.svg)
-![better-sqlite3](https://img.shields.io/badge/driver-better--sqlite3-lightgrey.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+<img alt="Node.js 22+" src="https://img.shields.io/badge/node.js-22+-green.svg"> <img alt="SQLite" src="https://img.shields.io/badge/storage-SQLite-blue.svg"> <img alt="better-sqlite3" src="https://img.shields.io/badge/driver-better--sqlite3-lightgrey.svg"> <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-green.svg">
 
 **Author**: [ASunYC](https://github.com/ASunYC)
 
@@ -311,4 +308,3 @@ The generated `*.db`, `*.db-wal`, and graph scratch files should stay out of Git
 MIT License
 
 Copyright (c) 2026 ASunYC
-
