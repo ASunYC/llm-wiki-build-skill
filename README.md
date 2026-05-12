@@ -14,18 +14,14 @@
 
 ## Project Overview
 
-`llm-wiki-build-skill` extracts the core idea of an LLM Wiki into a portable skill project. It lets any repository quickly create a local knowledge base, import documentation, split content into searchable chunks, derive graph relations, and export a graph JSON for UI or agent workflows.
+`llm-wiki-build-skill` extracts the core idea of an LLM Wiki into a portable skill project. It lets any repository quickly create a local knowledge base, import documentation, split content into searchable chunks with evidence locations, extract entities/topics/relations with an OpenAI-compatible LLM, lint quality, reingest sources, and export graph JSON for UI or agent workflows.
 
-The first version is intentionally lightweight:
+The project is designed for two modes:
 
-- SQLite as the default storage layer.
-- `better-sqlite3` for simple, synchronous, stable scripts.
-- Markdown heading-aware chunking.
-- Deterministic graph relations that work without an LLM.
-- Optional room for OpenAI-compatible LLM extraction.
-- A schema that can also store skills, repositories, authors, and locations.
+- **Fallback wiki mode**: no LLM credentials required. It builds sources, pages, chunks, FTS search, deterministic graph edges, and graph communities.
+- **LLM-enhanced mode**: set environment variables and run extraction. It adds entities, topics, semantic/document relations, contradictions, and synthesis pages with source evidence.
 
-It is designed to support projects like `skills-book`, where public skill repositories are transformed into `skills.db` and then exported into a Skills Shop interface.
+It supports projects like `skills-book`, where public skill repositories are transformed into `skills.db` and exported into a Skills Shop interface.
 
 ---
 
@@ -34,11 +30,13 @@ It is designed to support projects like `skills-book`, where public skill reposi
 The generated wiki database can store:
 
 - `sources`: imported files, URLs, or documents.
-- `pages`: normalized wiki pages.
-- `chunks`: searchable text chunks.
-- `entities`: extracted people, tools, frameworks, products, or concepts.
-- `topics`: reusable topic labels.
-- `relations`: graph edges such as wikilinks, shared tags, source overlap, and LLM relations.
+- `pages`: normalized wiki pages, including `source`, `entity`, `topic`, `synthesis`, and `query` pages.
+- `chunks`: searchable text chunks with line and character offsets.
+- `entities`: LLM-extracted people, tools, frameworks, projects, concepts, or patterns.
+- `topics`: reusable topic labels and definitions.
+- `relations`: deterministic and LLM-extracted graph edges.
+- `analysis_configs`: analysis behavior such as depth and merge policy.
+- `llm_runs`: audit records for LLM extraction runs.
 - `skills`, `repositories`, `authors`, `locations`: optional marketplace-style metadata.
 
 Graph output includes:
@@ -46,6 +44,7 @@ Graph output includes:
 - `nodes`
 - `edges`
 - `communities`
+- `insights`
 - `statistics`
 
 ---
@@ -60,7 +59,7 @@ cd llm-wiki-build-skill
 npm install
 ```
 
-Or install the dependency in any target project that wants to run the scripts:
+Or install the runtime dependency in a target project:
 
 ```bash
 npm install better-sqlite3
@@ -82,17 +81,90 @@ Import documents:
 node scripts/ingest-docs.mjs ./data/wiki.db ./README.md ./docs
 ```
 
+Query the wiki:
+
+```bash
+node scripts/query-wiki.mjs ./data/wiki.db "frontend design"
+```
+
 Build a graph:
 
 ```bash
 node scripts/build-graph.mjs ./data/wiki.db --out ./data/wiki-graph.json
 ```
 
-Query the wiki:
+Lint the wiki:
 
 ```bash
-node scripts/query-wiki.mjs ./data/wiki.db "frontend design"
+node scripts/lint-wiki.mjs ./data/wiki.db
 ```
+
+---
+
+## LLM Extraction
+
+The API key design is intentionally simple and safe:
+
+- `LLM_API_BASE`: OpenAI-compatible endpoint, for example `https://api.openai.com/v1`.
+- `LLM_API_KEY`: API key. It is read from the environment only and is never written to SQLite.
+- `LLM_MODEL`: model name.
+- `LLM_TIMEOUT_MS`: optional request timeout, default `180000`.
+
+Example:
+
+```bash
+export LLM_API_BASE=https://api.openai.com/v1
+export LLM_API_KEY=your-key
+export LLM_MODEL=gpt-4.1-mini
+```
+
+Check masked config:
+
+```bash
+node scripts/llm-status.mjs
+```
+
+Test the connection:
+
+```bash
+node scripts/test-llm.mjs
+```
+
+Run extraction:
+
+```bash
+node scripts/extract-llm.mjs ./data/wiki.db --depth standard
+```
+
+Supported depth values:
+
+- `fast`: larger chunks, fewer extracted items.
+- `standard`: balanced default.
+- `deep`: smaller chunks, more extracted items.
+
+LLM extraction writes:
+
+- entities into `entities`
+- topics into `topics`
+- semantic and document relations into `relations(relation_type = "llm_relation")`
+- source summaries and contradictions into `pages(page_type = "synthesis")`
+- evidence locations into `relations.evidence_details`
+
+---
+
+## Commands
+
+| Command | Example | Description |
+| --- | --- | --- |
+| `init-wiki` | `node scripts/init-wiki.mjs ./data/wiki.db --name "Project Wiki"` | Create SQLite tables and indexes. |
+| `ingest-docs` | `node scripts/ingest-docs.mjs ./data/wiki.db ./README.md ./docs` | Import Markdown/TXT files into sources, pages, chunks, and FTS. |
+| `llm-status` | `node scripts/llm-status.mjs` | Show masked LLM configuration loaded from environment variables. |
+| `test-llm` | `node scripts/test-llm.mjs` | Test the OpenAI-compatible LLM connection. |
+| `extract-llm` | `node scripts/extract-llm.mjs ./data/wiki.db --depth standard` | Extract entities, topics, relations, contradictions, and synthesis pages. |
+| `build-graph` | `node scripts/build-graph.mjs ./data/wiki.db --out ./data/wiki-graph.json` | Export deterministic + LLM-enhanced graph JSON. |
+| `query-wiki` | `node scripts/query-wiki.mjs ./data/wiki.db "agent"` | Search FTS chunks, pages, entities, and topics. |
+| `lint-wiki` | `node scripts/lint-wiki.mjs ./data/wiki.db` | Check pages, chunks, graph edges, and evidence coverage. |
+| `reingest` | `node scripts/reingest.mjs ./data/wiki.db ./docs --extract` | Reimport source files and optionally rerun LLM extraction. |
 
 ---
 
@@ -103,6 +175,7 @@ You can keep this repository outside your target project and call scripts by pat
 ```bash
 node ../llm-wiki-build-skill/scripts/init-wiki.mjs ./data/wiki.db --name "My App Wiki"
 node ../llm-wiki-build-skill/scripts/ingest-docs.mjs ./data/wiki.db ./README.md ./docs
+node ../llm-wiki-build-skill/scripts/extract-llm.mjs ./data/wiki.db --depth standard
 node ../llm-wiki-build-skill/scripts/build-graph.mjs ./data/wiki.db --out ./public/wiki-graph.json
 ```
 
@@ -110,24 +183,13 @@ Recommended target project layout:
 
 ```text
 my-project/
-├── data/
-│   ├── wiki.db
-│   └── wiki-graph.json
-├── docs/
-├── README.md
-└── package.json
+|-- data/
+|   |-- wiki.db
+|   `-- wiki-graph.json
+|-- docs/
+|-- README.md
+`-- package.json
 ```
-
----
-
-## Commands
-
-| Command | Example | Description |
-| --- | --- | --- |
-| `init-wiki` | `node scripts/init-wiki.mjs ./data/wiki.db --name "Project Wiki"` | Create SQLite tables and indexes. |
-| `ingest-docs` | `node scripts/ingest-docs.mjs ./data/wiki.db ./README.md ./docs` | Import Markdown/TXT files into sources, pages, and chunks. |
-| `build-graph` | `node scripts/build-graph.mjs ./data/wiki.db --out ./data/wiki-graph.json` | Export deterministic graph JSON. |
-| `query-wiki` | `node scripts/query-wiki.mjs ./data/wiki.db "agent"` | Search pages and chunks by keyword. |
 
 ---
 
@@ -135,24 +197,40 @@ my-project/
 
 ### Page Types
 
-The schema supports these page types:
-
 - `source`: imported source documents.
-- `entity`: extracted entities.
+- `entity`: entity pages, usually generated from SKILL.md or LLM output.
 - `topic`: topic landing pages.
-- `synthesis`: generated summaries or cross-document synthesis.
+- `synthesis`: generated summaries, contradictions, or cross-document synthesis.
 - `query`: saved query results or generated answers.
 
 ### Relation Types
 
-The graph supports these relation sources:
-
 - `wikilink`: created from `[[Page Title]]` style links.
 - `shared_tag`: created when pages share tags or categories.
 - `source_overlap`: created when records share a source or repository.
-- `llm_relation`: reserved for LLM-extracted relationships.
+- `mentions_entity`: created from page-to-entity extraction.
+- `has_topic`: created from page-to-topic extraction.
+- `llm_relation`: created by `extract-llm.mjs` with confidence, evidence, and evidence location.
 
-The default scripts work without an LLM. If you add an OpenAI-compatible extraction step, write richer edges into `relations` with `relation_type = "llm_relation"`.
+### Evidence Locations
+
+Every imported chunk stores:
+
+- `line_start`
+- `line_end`
+- `start_offset`
+- `end_offset`
+
+LLM relations store `evidence_details` with:
+
+- `chunkId`
+- `sourceTitle`
+- `sourcePath`
+- `lineStart`
+- `lineEnd`
+- `charStart`
+- `charEnd`
+- `snippet`
 
 ---
 
@@ -173,6 +251,9 @@ repositories
 authors
 locations
 import_jobs
+analysis_configs
+llm_runs
+chunks_fts
 ```
 
 Important indexes:
@@ -198,23 +279,27 @@ See [references/schema.md](references/schema.md) for the full schema notes.
 
 ### 1. Initialize
 
-`init-wiki.mjs` creates the database, tables, and indexes.
+`init-wiki.mjs` creates the database, tables, indexes, FTS table, and default analysis config.
 
 ### 2. Ingest
 
-`ingest-docs.mjs` recursively imports `.md` and `.txt` files. Markdown is chunked by heading structure first. Oversized sections are split into overlapping character chunks.
+`ingest-docs.mjs` recursively imports `.md` and `.txt` files. Markdown is chunked by heading structure first. Oversized sections are split into overlapping chunks. Each chunk is indexed in SQLite FTS5 and stores source line/character positions.
 
-### 3. Build Graph
+### 3. Extract With LLM
 
-`build-graph.mjs` creates graph nodes from pages and derives deterministic edges from:
+`extract-llm.mjs` calls an OpenAI-compatible chat completions API. It asks for strict JSON, repairs common JSON formatting issues, and writes entities, topics, relations, source summaries, and contradictions to SQLite.
 
-- wiki links
-- shared tags
-- same source overlap
+### 4. Build Graph
 
-### 4. Query
+`build-graph.mjs` creates graph nodes from pages, entities, and topics. It merges deterministic edges and LLM edges, then computes pair signals, communities, isolated nodes, bridge nodes, and cross-community surprises.
 
-`query-wiki.mjs` performs simple keyword search across page titles, page content, and chunks.
+### 5. Query
+
+`query-wiki.mjs` searches chunk FTS first, then falls back to pages, entities, and topics.
+
+### 6. Lint
+
+`lint-wiki.mjs` checks wiki health, broken chunk references, graph edge integrity, isolated nodes, and LLM evidence coverage.
 
 ---
 
@@ -239,40 +324,27 @@ In that workflow:
 
 ---
 
-## Optional LLM Extraction
-
-The base scripts do not require any LLM credentials. A future extractor can use OpenAI-compatible environment variables:
-
-```bash
-LLM_API_BASE=https://api.openai.com/v1
-LLM_API_KEY=your-key
-LLM_MODEL=gpt-4.1-mini
-```
-
-Suggested LLM extraction outputs:
-
-- entities into `entities`
-- topics into `topics`
-- relations into `relations` with `relation_type = "llm_relation"`
-- generated summaries into `pages` with `page_type = "synthesis"`
-
----
-
 ## Repository Structure
 
 ```text
 llm-wiki-build-skill/
-├── README.md
-├── SKILL.md
-├── package.json
-├── references/
-│   └── schema.md
-└── scripts/
-    ├── init-wiki.mjs
-    ├── ingest-docs.mjs
-    ├── build-graph.mjs
-    ├── query-wiki.mjs
-    └── wiki-core.mjs
+|-- README.md
+|-- SKILL.md
+|-- package.json
+|-- references/
+|   `-- schema.md
+`-- scripts/
+    |-- init-wiki.mjs
+    |-- ingest-docs.mjs
+    |-- llm-client.mjs
+    |-- llm-status.mjs
+    |-- test-llm.mjs
+    |-- extract-llm.mjs
+    |-- build-graph.mjs
+    |-- query-wiki.mjs
+    |-- lint-wiki.mjs
+    |-- reingest.mjs
+    `-- wiki-core.mjs
 ```
 
 ---
@@ -287,19 +359,26 @@ node scripts/init-wiki.mjs ./tmp/wiki.db --name "Smoke Test"
 node scripts/ingest-docs.mjs ./tmp/wiki.db README.md SKILL.md references/schema.md
 node scripts/build-graph.mjs ./tmp/wiki.db --out ./tmp/wiki-graph.json
 node scripts/query-wiki.mjs ./tmp/wiki.db sqlite
+node scripts/lint-wiki.mjs ./tmp/wiki.db
 ```
 
-The generated `*.db`, `*.db-wal`, and graph scratch files should stay out of Git.
+LLM smoke test, when credentials are available:
+
+```bash
+node scripts/test-llm.mjs
+node scripts/extract-llm.mjs ./tmp/wiki.db --depth fast --limit 1
+node scripts/lint-wiki.mjs ./tmp/wiki.db
+```
+
+Generated `*.db`, `*.db-wal`, and graph scratch files should stay out of Git.
 
 ---
 
 ## Roadmap
 
-- Add optional OpenAI-compatible entity/topic/relation extraction.
-- Add full-text search using SQLite FTS5.
-- Add graph community detection beyond the current deterministic default.
 - Add richer import adapters for GitHub repositories and web pages.
 - Add export profiles for VitePress, static apps, and agent toolchains.
+- Add optional embedding search on top of the current FTS5 keyword search.
 
 ---
 

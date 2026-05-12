@@ -8,7 +8,12 @@
     "init": "node scripts/init-wiki.mjs",
     "ingest": "node scripts/ingest-docs.mjs",
     "graph": "node scripts/build-graph.mjs",
-    "query": "node scripts/query-wiki.mjs"
+    "query": "node scripts/query-wiki.mjs",
+    "llm:status": "node scripts/llm-status.mjs",
+    "llm:test": "node scripts/test-llm.mjs",
+    "llm:extract": "node scripts/extract-llm.mjs",
+    "lint": "node scripts/lint-wiki.mjs",
+    "reingest": "node scripts/reingest.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.6"
